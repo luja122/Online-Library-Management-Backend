@@ -27,7 +27,6 @@ public class BookService {
     public ResponseEntity<?> borrowBook(int bookId, int userId) {
        Books book = bookRepo.findById(bookId).orElseThrow(()-> new UsernameNotFoundException("User not found"));
       int num_book_available= book.getNo_book();
-      num_book_available = num_book_available-1;
         if(num_book_available<=0){
             if(num_book_available==0){
                 book.setStatus("unavailable");
@@ -36,8 +35,8 @@ public class BookService {
         }
         Users user = userRepo.findById(userId).orElseThrow(()->new UsernameNotFoundException("User not Found"));
         Books book1 = bookRepo.findById(bookId).orElseThrow(()-> new UsernameNotFoundException("Book not Found"));
-        num_book_available = num_book_available-1;
-        book.setNo_book(num_book_available);
+       int new_num_book_available = num_book_available-1;
+        book.setNo_book(new_num_book_available);
        Borrow data = new Borrow();
    data.setBorrow_date(LocalDate.now());
    data.setUser(user);
@@ -74,4 +73,20 @@ public class BookService {
     }
 
 
+    public ResponseEntity<?> returnBook(int bookId, int userId) {
+        if(borrowRepo.existsByBook_Id(bookId)&&borrowRepo.existsByUser_Id(userId)){
+         int book =  borrowRepo.findByBook_id(bookId).orElseThrow(()->new UsernameNotFoundException("User not found")).getId();
+            borrowRepo.deleteById(book);
+            int nobook= bookRepo.findById(bookId).orElseThrow(()->new UsernameNotFoundException("Book not found")).getNo_book();
+            nobook=nobook+1;
+        return  ResponseEntity.ok("Deleted Sucessfully") ;
+        }else{
+            return ResponseEntity.badRequest().body("Cannot Delete");
+        }
+    }
+
+    public List <Books> get_list_Borrowed_Book() {
+        List <Books> borrowedBook= borrowRepo.findAll().stream().map((books -> books.getBook())).toList();
+        return borrowedBook;
+    }
 }
